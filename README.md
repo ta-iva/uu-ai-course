@@ -4,5 +4,5 @@
 3. Local search algorithm for graph coloring
 4. Evolutionary terrain generation
 5. Evolutionary strategy generation for iterated prisoner's dilemma
-6. Evolutionary learning of a neural network
+6. Evolutionary learning of a neural network: Boom Master game
 7. Neural network training with a teacher
