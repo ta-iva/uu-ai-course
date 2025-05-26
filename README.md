@@ -6,3 +6,5 @@
 5. Evolutionary strategy generation for iterated prisoner's dilemma (DEAP)
 6. Evolutionary learning of feedforward NN: Boom Master game (DEAP)
 7. Neural network training with a teacher
+8. Pathfinding in 2D grid (Greedy BFS, Dijkstra, A*)
+9. Tic-Tac-Toe (Minimax)
