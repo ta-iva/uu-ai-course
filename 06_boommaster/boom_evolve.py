@@ -392,7 +392,7 @@ def draw_text(text):
 def nn_function(inp, wei):
     
     input_size = len(inp)
-    hidden_size = 5
+    hidden_size = 5  # hyperparametr
     output_size = 4  # nahoru, dolů, doleva, doprava
     
     # rozdělení vektoru vah
@@ -402,7 +402,7 @@ def nn_function(inp, wei):
     weights_output_end = weights_output_start + (hidden_size + 1) * output_size
     
     if len(wei) < weights_output_end:
-        return [random.randint(0, 3)]  # Pokud nemáme dostatek vah, vrátíme náhodný směr
+        return [random.randint(0, 3)]  # pokud nemáme dostatek vah, vrátíme náhodný směr
     
     # extrakce vah pro jednotlivé vrstvy
     weights_hidden = np.array(wei[weights_hidden_start:weights_hidden_end]).reshape(hidden_size, input_size + 1)
@@ -410,7 +410,7 @@ def nn_function(inp, wei):
     
     inp_with_bias = np.append(inp, 1.0)
     
-    hidden_layer = np.dot(weights_hidden, inp_with_bias)
+    hidden_layer = np.dot(weights_hidden, inp_with_bias)  # aktivační funkce ReLU
     hidden_layer = np.maximum(0, hidden_layer)
     hidden_with_bias = np.append(hidden_layer, 1.0)
 
@@ -428,23 +428,10 @@ def nn_function(inp, wei):
 
 
 # naviguje jedince pomocí neuronové sítě a jeho vlastní sekvence v něm schované
-def nn_navigate_me(me, inp, mines, flag):
-    
-    # DOPLNĚNO
-    # rozšíření vstupních senzorů
-    extended_inp = inp.copy()
-    
-    extended_inp.append(position_x(me))
-    extended_inp.append(position_y(me))
-    extended_inp.append(flag_distance(me, flag))
-    extended_inp.append(nearest_mine_distance(me, mines))
-    extended_inp.append(danger_up(me, mines))
-    extended_inp.append(danger_down(me, mines))
-    extended_inp.append(danger_left(me, mines))
-    extended_inp.append(danger_right(me, mines))
+def nn_navigate_me(me, inp):
     
     # získání směru pohybu z NN
-    out = np.array(nn_function(extended_inp, me.sequence))
+    out = np.array(nn_function(inp, me.sequence))
     ind = out[0]
     
     # nahoru, pokud není zeď
@@ -485,14 +472,20 @@ def handle_mes_movement(mes, mines, flag):
 
         if me.alive and not me.won:
             
-            # Sbírání vstupů ze senzorů
             inp = []
-            
-            # Základní senzor
-            inp.append(my_senzor(me))
-            
-            # Navigace agenta pomocí neuronové sítě s rozšířenými vstupy
-            nn_navigate_me(me, inp, mines, flag)
+
+            # sbírání vstupů ze senzorů            
+            inp.append(position_x(me))
+            inp.append(position_y(me))
+            inp.append(flag_distance(me, flag))
+            inp.append(nearest_mine_distance(me, mines))
+            inp.append(danger_up(me, mines))
+            inp.append(danger_down(me, mines))
+            inp.append(danger_left(me, mines))
+            inp.append(danger_right(me, mines))
+    
+            # navigace agenta pomocí neuronové sítě
+            nn_navigate_me(me, inp)
 
 
 
@@ -547,17 +540,17 @@ def main():
     # =====================================================================
     
     VELIKOST_POPULACE = 10  # při pokusném navýšení bez změny dalších parametrů tendence uvíznout v levém dolním rohu
-    EVO_STEPS = 5  # pocet kroku evoluce
+    #EVO_STEPS = 5  # pocet kroku evoluce
     
-    INPUT_SIZE = 9  # 1+2+1+1+4
+    INPUT_SIZE = 8  # 2+1+1+4
     HIDDEN_SIZE = 5
     OUTPUT_SIZE = 4
     
     DELKA_JEDINCE = (INPUT_SIZE + 1) * HIDDEN_SIZE + (HIDDEN_SIZE + 1) * OUTPUT_SIZE
     
-    NGEN = 30        # počet generací
-    CXPB = 0.7       # pravděpodobnost crossoveru (lehce navýšeno)
-    MUTPB = 0.3      # pravděpodobnost mutace (lehce navýšeno)
+    #NGEN = 30        # počet generací
+    CXPB = 0.6       # pravděpodobnost crossoveru
+    MUTPB = 0.3      # pravděpodobnost mutace (navýšeno o 0.1)
     
     SIMSTEPS = 1000  # počet kroků simulace
     
@@ -571,7 +564,7 @@ def main():
     toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
     # DOPLNĚNO
-    # vlastní mutace - gaussovská
+    # vlastní mutace - gaussovská (přičte hodnotu z normálního rozdělení se střední hodnotou 0 a vhodným rozptylem - biased)
     def mutGaussian(individual, mu, sigma, indpb):
         for i in range(len(individual)):
             if random.random() < indpb:
@@ -579,7 +572,7 @@ def main():
                 individual[i] = max(min(individual[i], 1), -1)  # omezení hodnot mezi -1 a 1
         return individual,
 
-    toolbox.register("mate", tools.cxTwoPoint)
+    toolbox.register("mate", tools.cxTwoPoint)  # dvoubodové křížení
     toolbox.register("mutate", mutGaussian, mu=0, sigma=0.2, indpb=0.1)
     toolbox.register("select", tools.selTournament, tournsize=3)  # turnajová selekce (DOPLNĚNO)
     toolbox.register("selectbest", tools.selBest)
